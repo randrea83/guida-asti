@@ -19,6 +19,10 @@ body{margin:0;background:var(--sky);color:var(--ink);font-family:var(--f-body);o
 .hud{position:fixed;pointer-events:none;z-index:5;}
 .glass{background:var(--panel);border:1px solid var(--line);border-radius:10px;backdrop-filter:blur(6px);}
 #street{top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);padding:8px 18px;font-family:var(--f-display);font-weight:700;font-size:clamp(18px,3vw,26px);letter-spacing:.02em;white-space:nowrap;max-width:calc(100vw - 32px);overflow:hidden;text-overflow:ellipsis;}
+#toast{left:50%;transform:translateX(-50%);bottom:calc(30px + env(safe-area-inset-bottom,0px));padding:10px 16px;font-size:14px;line-height:1.4;text-align:center;max-width:min(440px,calc(100vw - 32px));box-sizing:border-box;}
+@media (pointer:coarse){#toast{bottom:auto;top:calc(150px + env(safe-area-inset-top,0px));}}
+@media (pointer:coarse) and (orientation:landscape){#toast{top:calc(118px + env(safe-area-inset-top,0px));max-width:300px;font-size:13px;}}
+#topbar button.active{background:var(--accent);color:#1a1008;border-color:var(--accent);}
 #street small{display:block;font-family:var(--f-body);font-weight:400;font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;text-align:center;}
 #speedo{right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));padding:10px 16px;text-align:right;min-width:110px;}
 #speedo b{font-family:var(--f-display);font-size:48px;line-height:1;font-variant-numeric:tabular-nums;display:block;}
@@ -79,6 +83,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 
 <canvas id="c"></canvas>
 
+<div id="toast" class="hud glass" hidden></div>
 <div id="street" class="hud glass" hidden><small>Sei in</small><span id="streetName">—</span></div>
 <div id="speedo" class="hud glass" hidden><b id="kmh">0</b><span>km/h</span></div>
 <div id="mini" class="hud" hidden><canvas id="miniC" width="360" height="360"></canvas></div>
@@ -86,6 +91,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   <button id="bCam" type="button" title="Cambia visuale (C)">Visuale</button>
   <button id="bFind" type="button" title="Vai a una via (F)">Vai a…</button>
   <button id="bReset" type="button" title="Rimetti l'auto in strada (R)">In strada</button>
+  <button id="bGhost" type="button" title="Attraversa i palazzi (G)">Passa i muri</button>
   <button id="bSound" type="button" title="Sonoro on/off (N)">Audio: sì</button>
   <button id="bHelp" type="button" title="Comandi (H)">?</button>
 </div>
@@ -97,7 +103,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   <kbd>R</kbd> rimetti l'auto in strada<br>
   <kbd>M</kbd> mostra/nascondi mappa<br>
   <kbd>O</kbd> ombre on/off<br>
-  <kbd>K</kbd> clacson · <kbd>N</kbd> audio on/off
+  <kbd>K</kbd> clacson · <kbd>N</kbd> audio on/off<br>
+  <kbd>G</kbd> passa attraverso i muri
 </div>
 <form id="search" class="glass" hidden>
   <input id="searchIn" list="streets" placeholder="Es. Corso Alfieri" autocomplete="off">
@@ -506,7 +513,8 @@ async function start(data){
   buildCar();
   // elenco vie per "Vai a…"
   const dl=$("streets"); dl.innerHTML=""; [...streetIndex.keys()].sort((a,b)=>a.localeCompare(b,"it")).forEach(nm=>{ const o=document.createElement("option"); o.value=nm; dl.appendChild(o); });
-  placeOnRoad(0,0,null,true);
+  startPosition();
+  toast("Si parte da " + (startName||"una via principale") + ". Se resti chiuso tocca «Passa i muri» o «Vai a…».", 7000);
   $("loader").hidden=true; for(const id of ["street","speedo","mini","topbar"]) $(id).hidden=false;
   if(!started){ started=true; last=performance.now(); requestAnimationFrame(loop); }
 }
@@ -515,6 +523,23 @@ async function start(data){
 // per non finire in una stradina di servizio dentro un cortile.
 const MINOR = new Set(["service","track","living_street","pedestrian","construction"]);
 function clearAt(x,z,r){ for(const s of wallGrid.near(x,z,1)) if(closest(x,z,s)[2]<r) return false; return true; }
+// Partenza: un corso largo e aperto. Si prova il primo nome che esiste nella mappa.
+const START_STREETS=["Corso Dante","Corso Alessandria","Corso Savona","Corso Torino","Corso Venezia","Corso Alfieri"];
+let startName="";
+function bestSegOf(name){
+  const segs=roadSegs.filter(s=>s[4]===name).sort((a,b)=>Math.hypot(b[2]-b[0],b[3]-b[1])-Math.hypot(a[2]-a[0],a[3]-a[1]));
+  for(const s of segs){ if(Math.hypot(s[2]-s[0],s[3]-s[1])>12 && clearAt((s[0]+s[2])/2,(s[1]+s[3])/2,3)) return s; }
+  return segs[0]||null;
+}
+function startPosition(){
+  for(const nm of START_STREETS){ const s=bestSegOf(nm); if(s){ startName=nm; placeOnRoad(0,0,s); return; } }
+  startName=""; placeOnRoad(0,0,null,true);
+}
+let toastT=0;
+function toast(msg,ms){ const t=$("toast"); t.textContent=msg; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true, ms||3000); }
+let ghost=false;
+function setGhost(on){ ghost=on; $("bGhost").classList.toggle("active",on); $("bGhost").textContent = on?"Muri: spenti":"Passa i muri";
+  toast(on?"Ora attraversi i palazzi. Tocca di nuovo per riaccendere i muri.":"Muri di nuovo solidi.", 3000); }
 function placeOnRoad(x,z, seg, spawn){
   let best=seg, bd=Infinity, bt=0.5;
   if(!best){
@@ -570,6 +595,7 @@ addEventListener("keydown", e=>{
   if(e.code==="KeyF"){ e.preventDefault(); toggleSearch(); }
   if(e.code==="KeyO"){ shadowsOn=!shadowsOn; sun.castShadow=shadowsOn; }
   if(e.code==="KeyN"){ initAudio(); setSound(!audio.on); }
+  if(e.code==="KeyG") setGhost(!ghost);
 });
 addEventListener("keyup", e=>{ if(KEYMAP[e.code]) keys[KEYMAP[e.code]]=false; });
 addEventListener("blur", ()=>{ for(const k in keys) keys[k]=false; });
@@ -639,12 +665,13 @@ addEventListener("pointerdown", initAudio); addEventListener("keydown", initAudi
 document.addEventListener("visibilitychange", ()=>{ if(!audio.ctx) return; if(document.hidden) audio.ctx.suspend(); else audio.ctx.resume(); });
 $("bSound").onclick=()=>{ initAudio(); setSound(!audio.on); };
 $("bReset").onclick=()=>placeOnRoad(car.x,car.z);
+$("bGhost").onclick=()=>setGhost(!ghost);
 function cycleCam(){ camMode=(camMode+1)%4; snapCamera(); }
 function toggleSearch(){ const s=$("search"); s.hidden=!s.hidden; if(!s.hidden){ $("searchIn").value=""; $("searchIn").focus(); } }
 $("bCam").onclick=cycleCam; $("bHelp").onclick=()=>$("help").hidden=!$("help").hidden; $("bFind").onclick=toggleSearch;
 $("search").addEventListener("submit", e=>{ e.preventDefault(); const q=$("searchIn").value.trim().toLowerCase(); if(!q) return;
   let hit=null; for(const [nm,v] of streetIndex){ if(nm.toLowerCase()===q){hit=v;break;} } if(!hit) for(const [nm,v] of streetIndex){ if(nm.toLowerCase().includes(q)){hit=v;break;} }
-  if(hit){ placeOnRoad(0,0,hit.seg); $("search").hidden=true; $("searchIn").blur(); } else { $("searchIn").value=""; $("searchIn").placeholder="Via non trovata, riprova"; } });
+  if(hit){ const nm=hit.seg[4]; placeOnRoad(0,0,bestSegOf(nm)||hit.seg); toast("Sei in "+nm, 2500); $("search").hidden=true; $("searchIn").blur(); } else { $("searchIn").value=""; $("searchIn").placeholder="Via non trovata, riprova"; } });
 $("search").addEventListener("keydown", e=>{ if(e.key==="Escape"){ $("search").hidden=true; $("searchIn").blur(); } });
 
 const MAXV=33, REV=9;
@@ -663,7 +690,7 @@ function physics(dt){
   const fx=-Math.sin(car.h), fz=-Math.cos(car.h);
   car.x += fx*car.v*dt; car.z += fz*car.v*dt;
   // collisioni con i muri: due cerchi, davanti e dietro
-  for(const off of [1.25,-1.25]){
+  if(!ghost) for(const off of [1.25,-1.25]){
     for(let it=0;it<2;it++){
       const cx=car.x+fx*off, cz=car.z+fz*off, r=1.05;
       for(const s of wallGrid.near(cx,cz,1)){
