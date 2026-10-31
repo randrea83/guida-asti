@@ -1,3 +1,5 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Guida per Asti</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;700&family=Figtree:wght@400;600&display=swap">
@@ -49,11 +51,29 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 #drop.over{border-color:var(--accent);color:var(--ink);}
 /* Comandi touch */
 #touch{position:fixed;inset:auto 0 0 0;z-index:6;display:none;justify-content:space-between;padding:0 max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));pointer-events:none;}
-#touch .grp{display:flex;gap:10px;pointer-events:auto;}
-#touch button{width:68px;height:68px;border-radius:50%;font:700 24px var(--f-display);color:var(--ink);background:var(--panel);border:1px solid var(--line);}
-#touch button.on{background:var(--accent);color:#1a1008;}
-@media (pointer:coarse){#touch{display:flex;} #mini{width:120px;height:120px;bottom:calc(100px + env(safe-area-inset-bottom,0px));} #speedo{bottom:calc(100px + env(safe-area-inset-bottom,0px));} #help{display:none;}}
-@media (max-width:600px){#mini{width:110px;height:110px;} #speedo b{font-size:36px;}}
+#touch{--tb:min(104px,21vw);align-items:flex-end;}
+#touch .grp{display:flex;gap:12px;pointer-events:auto;align-items:flex-end;}
+#touch .col{display:flex;flex-direction:column;gap:12px;align-items:stretch;}
+#touch button{width:var(--tb);height:var(--tb);border-radius:50%;font:700 calc(var(--tb)*.36) var(--f-display);color:var(--ink);background:var(--panel);border:2px solid var(--line);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:none;}
+#touch #tG{height:calc(var(--tb)*1.35);border-radius:calc(var(--tb)/2);}
+#touch .small{width:auto;height:calc(var(--tb)*.56);border-radius:calc(var(--tb)*.28);font:600 clamp(12px,3.2vw,15px) var(--f-body);padding:0 10px;}
+#touch button.on{background:var(--accent);color:#1a1008;border-color:var(--accent);}
+@media (pointer:coarse){
+  #touch{display:flex;} #help{display:none;}
+  #mini{top:calc(70px + env(safe-area-inset-top,0px));bottom:auto;width:min(110px,26vw);height:min(110px,26vw);}
+  #speedo{top:calc(70px + env(safe-area-inset-top,0px));bottom:auto;right:auto;left:50%;transform:translateX(-50%);min-width:0;padding:6px 12px;text-align:center;}
+  #speedo b{font-size:32px;}
+  #topbar{top:calc(70px + env(safe-area-inset-top,0px));flex-direction:column;align-items:stretch;}
+  #topbar button{padding:10px 12px;font-size:14px;}
+  #bHelp{display:none;}
+}
+@media (pointer:coarse) and (orientation:landscape){
+  #topbar{top:calc(12px + env(safe-area-inset-top,0px));display:grid;grid-template-columns:1fr 1fr;}
+  #topbar button{padding:8px 10px;font-size:13px;}
+  #mini{top:calc(12px + env(safe-area-inset-top,0px));}
+  #speedo{top:calc(80px + env(safe-area-inset-top,0px));}
+}
+@media (max-width:600px) and (pointer:fine){#mini{width:110px;height:110px;} #speedo b{font-size:36px;}}
 @media (prefers-reduced-motion:reduce){#bar i{transition:none;}}
 </style>
 
@@ -65,6 +85,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 <div id="topbar" class="hud" hidden>
   <button id="bCam" type="button" title="Cambia visuale (C)">Visuale</button>
   <button id="bFind" type="button" title="Vai a una via (F)">Vai a…</button>
+  <button id="bReset" type="button" title="Rimetti l'auto in strada (R)">In strada</button>
+  <button id="bSound" type="button" title="Sonoro on/off (N)">Audio: sì</button>
   <button id="bHelp" type="button" title="Comandi (H)">?</button>
 </div>
 <div id="help" class="hud glass" hidden>
@@ -74,7 +96,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   <kbd>F</kbd> vai a una via<br>
   <kbd>R</kbd> rimetti l'auto in strada<br>
   <kbd>M</kbd> mostra/nascondi mappa<br>
-  <kbd>O</kbd> ombre on/off
+  <kbd>O</kbd> ombre on/off<br>
+  <kbd>K</kbd> clacson · <kbd>N</kbd> audio on/off
 </div>
 <form id="search" class="glass" hidden>
   <input id="searchIn" list="streets" placeholder="Es. Corso Alfieri" autocomplete="off">
@@ -84,7 +107,10 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 
 <div id="touch">
   <div class="grp"><button id="tL" type="button" aria-label="Sinistra">◀</button><button id="tR" type="button" aria-label="Destra">▶</button></div>
-  <div class="grp"><button id="tB" type="button" aria-label="Freno">▼</button><button id="tG" type="button" aria-label="Acceleratore">▲</button></div>
+  <div class="grp">
+    <div class="col"><button id="tK" class="small" type="button">Clacson</button><button id="tB" type="button" aria-label="Freno e retromarcia">▼</button></div>
+    <div class="col"><button id="tH" class="small" type="button">Freno a mano</button><button id="tG" type="button" aria-label="Acceleratore">▲</button></div>
+  </div>
 </div>
 
 <div id="loader">
@@ -494,7 +520,7 @@ function buildCar(){
 }
 
 const keys={};
-const KEYMAP={ArrowUp:"up",KeyW:"up",ArrowDown:"down",KeyS:"down",ArrowLeft:"left",KeyA:"left",ArrowRight:"right",KeyD:"right",Space:"hand"};
+const KEYMAP={ArrowUp:"up",KeyW:"up",ArrowDown:"down",KeyS:"down",ArrowLeft:"left",KeyA:"left",ArrowRight:"right",KeyD:"right",Space:"hand",KeyK:"horn"};
 addEventListener("keydown", e=>{
   if(e.target.tagName==="INPUT") return;
   if(KEYMAP[e.code]){ keys[KEYMAP[e.code]]=true; e.preventDefault(); }
@@ -505,14 +531,76 @@ addEventListener("keydown", e=>{
   if(e.code==="KeyH") $("help").hidden=!$("help").hidden;
   if(e.code==="KeyF"){ e.preventDefault(); toggleSearch(); }
   if(e.code==="KeyO"){ shadowsOn=!shadowsOn; sun.castShadow=shadowsOn; }
+  if(e.code==="KeyN"){ initAudio(); setSound(!audio.on); }
 });
 addEventListener("keyup", e=>{ if(KEYMAP[e.code]) keys[KEYMAP[e.code]]=false; });
 addEventListener("blur", ()=>{ for(const k in keys) keys[k]=false; });
-for(const [id,k] of [["tL","left"],["tR","right"],["tG","up"],["tB","down"]]){
+for(const [id,k] of [["tL","left"],["tR","right"],["tG","up"],["tB","down"],["tH","hand"],["tK","horn"]]){
   const b=$(id);
-  const on=e=>{ e.preventDefault(); keys[k]=true; b.classList.add("on"); }, off=e=>{ e.preventDefault(); keys[k]=false; b.classList.remove("on"); };
+  const on=e=>{ e.preventDefault(); initAudio(); keys[k]=true; b.classList.add("on"); if(navigator.vibrate&&k==="horn") navigator.vibrate(20); },
+        off=e=>{ e.preventDefault(); keys[k]=false; b.classList.remove("on"); };
   b.addEventListener("pointerdown",on); b.addEventListener("pointerup",off); b.addEventListener("pointerleave",off); b.addEventListener("pointercancel",off);
 }
+$("touch").addEventListener("contextmenu", e=>e.preventDefault());
+
+// ---------------------------------------------------------------- Sonoro (sintetizzato con Web Audio, nessun file)
+const audio={ctx:null, on:true, crash:0};
+try{ audio.on = localStorage.getItem("guida-asti-audio")!=="off"; }catch(e){}
+function soundLabel(){ $("bSound").textContent = "Audio: " + (audio.on?"sì":"no"); }
+soundLabel();
+function initAudio(){
+  if(audio.ctx){ if(audio.ctx.state!=="running") audio.ctx.resume(); return; }
+  const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+  const ctx=new AC(); audio.ctx=ctx;
+  const master=ctx.createGain(); master.gain.value=audio.on?0.55:0; master.connect(ctx.destination);
+  // motore: due oscillatori filtrati
+  const o1=ctx.createOscillator(); o1.type="sawtooth"; const o2=ctx.createOscillator(); o2.type="square";
+  const o2g=ctx.createGain(); o2g.gain.value=0.5;
+  const lp=ctx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=500; lp.Q.value=3;
+  const eg=ctx.createGain(); eg.gain.value=0;
+  o1.connect(lp); o2.connect(o2g); o2g.connect(lp); lp.connect(eg); eg.connect(master); o1.start(); o2.start();
+  // rumore bianco per gomme e urti
+  const buf=ctx.createBuffer(1,ctx.sampleRate,ctx.sampleRate); const d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  const ns=ctx.createBufferSource(); ns.buffer=buf; ns.loop=true;
+  const bp=ctx.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=1800; bp.Q.value=6;
+  const sg=ctx.createGain(); sg.gain.value=0; ns.connect(bp); bp.connect(sg); sg.connect(master); ns.start();
+  // clacson: due note insieme
+  const hg=ctx.createGain(); hg.gain.value=0; const hlp=ctx.createBiquadFilter(); hlp.type="lowpass"; hlp.frequency.value=1600;
+  for(const f of [415,520]){ const o=ctx.createOscillator(); o.type="square"; o.frequency.value=f; o.connect(hlp); o.start(); }
+  hlp.connect(hg); hg.connect(master);
+  Object.assign(audio,{master,o1,o2,lp,eg,sg,bp,hg,buf});
+  if(ctx.state!=="running") ctx.resume();
+}
+function setSound(on){ audio.on=on; soundLabel(); try{ localStorage.setItem("guida-asti-audio", on?"on":"off"); }catch(e){}
+  if(audio.ctx) audio.master.gain.setTargetAtTime(on?0.55:0, audio.ctx.currentTime, 0.05); }
+const GEARS=[0,6,12,19,27,37];  // m/s di inizio di ogni marcia
+function updateAudio(){
+  if(!audio.ctx || audio.ctx.state!=="running") return;
+  const t=audio.ctx.currentTime, v=Math.abs(car.v), thr=(keys.up||(keys.down&&car.v<0.3))?1:0;
+  let g=0; while(g<GEARS.length-1 && v>=GEARS[g+1]) g++;
+  const lo=GEARS[g], hi=GEARS[g+1]||lo+12; const frac=Math.min(1,(v-lo)/(hi-lo));
+  const rpm = v<0.5 ? 850 + thr*900 : 1500 + frac*4300 + thr*300;
+  const f = rpm/60*2;                                   // 4 cilindri: 2 scoppi per giro
+  audio.o1.frequency.setTargetAtTime(f, t, 0.05); audio.o2.frequency.setTargetAtTime(f*0.5, t, 0.05);
+  audio.lp.frequency.setTargetAtTime(350 + rpm*0.18 + thr*700, t, 0.08);
+  audio.eg.gain.setTargetAtTime(0.10 + thr*0.10 + frac*0.03, t, 0.08);
+  const skid = v>7 && (keys.hand || Math.abs(car.steer)*v>5.5) ? Math.min(0.22, 0.08+v*0.004) : 0;
+  audio.sg.gain.setTargetAtTime(skid, t, skid?0.04:0.12);
+  audio.hg.gain.setTargetAtTime(keys.horn?0.16:0, t, 0.01);
+  if(audio.crash>0){ crashSound(audio.crash); audio.crash=0; }
+}
+function crashSound(power){
+  const ctx=audio.ctx, t=ctx.currentTime;
+  const s=ctx.createBufferSource(); s.buffer=audio.buf; const f=ctx.createBiquadFilter(); f.type="lowpass"; f.frequency.value=380;
+  const g=ctx.createGain(); const peak=Math.min(0.9, 0.2+power*0.05);
+  g.gain.setValueAtTime(peak,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.45);
+  s.connect(f); f.connect(g); g.connect(audio.master); s.start(t); s.stop(t+0.5);
+  if(navigator.vibrate) navigator.vibrate(Math.min(120, 30+power*8));
+}
+addEventListener("pointerdown", initAudio); addEventListener("keydown", initAudio);
+document.addEventListener("visibilitychange", ()=>{ if(!audio.ctx) return; if(document.hidden) audio.ctx.suspend(); else audio.ctx.resume(); });
+$("bSound").onclick=()=>{ initAudio(); setSound(!audio.on); };
+$("bReset").onclick=()=>placeOnRoad(car.x,car.z);
 function cycleCam(){ camMode=(camMode+1)%4; snapCamera(); }
 function toggleSearch(){ const s=$("search"); s.hidden=!s.hidden; if(!s.hidden){ $("searchIn").value=""; $("searchIn").focus(); } }
 $("bCam").onclick=cycleCam; $("bHelp").onclick=()=>$("help").hidden=!$("help").hidden; $("bFind").onclick=toggleSearch;
@@ -543,7 +631,7 @@ function physics(dt){
       for(const s of wallGrid.near(cx,cz,1)){
         const c=closest(cx,cz,s); if(c[2]<r && c[2]>1e-4){
           const nx=(cx-c[0])/c[2], nz=(cz-c[1])/c[2], push=r-c[2]; car.x+=nx*push; car.z+=nz*push;
-          const vn=(fx*nx+fz*nz)*car.v; if(vn<-1.5) car.v*=0.45; else car.v*=0.97;
+          const vn=(fx*nx+fz*nz)*car.v; if(vn<-1.5){ if(vn<-3) audio.crash=Math.max(audio.crash,-vn); car.v*=0.45; } else car.v*=0.97;
         }
       }
     }
@@ -604,6 +692,7 @@ function loop(now){
   if((nameT-=dt)<=0){ nameT=0.25; let best=null,bd=Infinity; for(const s of roadGrid.near(car.x,car.z,1)){ const d=closest(car.x,car.z,s)[2]-s[5]/2; if(d<bd){bd=d;best=s;} }
     $("streetName").textContent = best&&bd<12 ? (best[4]||"Strada senza nome") : "Fuori strada"; }
   drawMini();
+  updateAudio();
   renderer.render(scene,camera);
   requestAnimationFrame(loop);
 }

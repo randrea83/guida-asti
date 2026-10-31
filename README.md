@@ -19,8 +19,14 @@ Se il download non parte, la pagina mostra un link: salvi il risultato come `ast
 | R | rimetti l'auto in strada |
 | M | mostra/nascondi la minimappa |
 | O | ombre on/off |
+| K | clacson |
+| N | audio on/off |
 
-Su telefono e tablet compaiono i pulsanti sullo schermo.
+Su telefono e tablet compaiono pulsanti grandi sullo schermo: sterzo a sinistra, freno/retromarcia e acceleratore a destra, più freno a mano e clacson. Funziona sia in verticale sia in orizzontale (consigliato).
+
+## Sonoro
+
+Motore che sale di giri e cambia marcia, stridio delle gomme in curva e col freno a mano, botto negli urti e clacson. È tutto generato dal browser (Web Audio), senza file audio. Parte al primo tocco o tasto premuto e si spegne col pulsante "Audio".
 
 ## Tecnica
 
