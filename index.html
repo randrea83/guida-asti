@@ -450,6 +450,8 @@ async function start(data){
     const rings=f.rings.map(r=>r.map(P)); const t=f.tags;
     if(++n%3000===0){ setStatus(`Costruisco la città… ${n} elementi`, 0.65+0.3*n/feats.length); await tick(); }
     if(kind==="building"){
+      // parcheggi sotterranei e costruzioni sotto terra: non si vedono e non bloccano (es. il parcheggio sotto Piazza Alfieri)
+      if(t.parking==="underground" || t.building==="underground" || /underground/.test(t.location||"") || parseInt(t.layer)<0) continue;
       const h=hash(String(t.name||"")+rings[0][0][0].toFixed(1)+rings[0][0][1].toFixed(1));
       const H=buildingHeight(t,h);
       let wc=WALLS[h%WALLS.length], rc=ROOFS[(h>>3)%ROOFS.length];
@@ -524,12 +526,12 @@ async function start(data){
 const MINOR = new Set(["service","track","living_street","pedestrian","construction"]);
 function clearAt(x,z,r){ for(const s of wallGrid.near(x,z,1)) if(closest(x,z,s)[2]<r) return false; return true; }
 // Partenza: un corso largo e aperto. Si prova il primo nome che esiste nella mappa.
-const START_STREETS=["Corso Dante","Corso Alessandria","Corso Savona","Corso Torino","Corso Venezia","Corso Alfieri"];
+const START_STREETS=["Piazza Vittorio Alfieri","Piazza Alfieri","Corso Dante","Corso Alessandria","Corso Savona","Corso Torino","Corso Venezia","Corso Alfieri"];
 let startName="";
 function bestSegOf(name){
-  const segs=roadSegs.filter(s=>s[4]===name).sort((a,b)=>Math.hypot(b[2]-b[0],b[3]-b[1])-Math.hypot(a[2]-a[0],a[3]-a[1]));
+  const segs=roadSegs.filter(s=>s[4]===name && !MINOR.has(s[6])).sort((a,b)=>Math.hypot(b[2]-b[0],b[3]-b[1])-Math.hypot(a[2]-a[0],a[3]-a[1]));
   for(const s of segs){ if(Math.hypot(s[2]-s[0],s[3]-s[1])>12 && clearAt((s[0]+s[2])/2,(s[1]+s[3])/2,3)) return s; }
-  return segs[0]||null;
+  return segs[0] || roadSegs.find(s=>s[4]===name) || null;
 }
 function startPosition(){
   for(const nm of START_STREETS){ const s=bestSegOf(nm); if(s){ startName=nm; placeOnRoad(0,0,s); return; } }

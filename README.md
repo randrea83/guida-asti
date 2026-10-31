@@ -4,7 +4,7 @@ Gioco di guida in 3D per le strade di Asti. Strade, palazzi, piazze, parchi, il 
 
 ## Come si gioca
 
-Apri `index.html` con Chrome, Edge o Firefox. Si parte da Corso Dante. Al primo avvio il gioco scarica la mappa di Asti dall'API Overpass (circa 10 MB) e la salva nel browser, così le volte successive parte subito.
+Apri `index.html` con Chrome, Edge o Firefox. Si parte da Piazza Alfieri (o da Corso Dante se la piazza non è nella mappa). Al primo avvio il gioco scarica la mappa di Asti dall'API Overpass (circa 10 MB) e la salva nel browser, così le volte successive parte subito.
 
 Se il download non parte, la pagina mostra un link: salvi il risultato come `asti.json` e lo trascini nel gioco. Va bene anche un file `.osm` esportato da openstreetmap.org.
 
